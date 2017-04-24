@@ -1,0 +1,135 @@
+---
+title: "DC_2-Notebook"
+output: html_notebook
+---
+
+# INDEX
+1. Basic mapping with ggplot2 -> 17%
+2. **Point and polygon data**     -> 75%
+3. Raster data and color      -> 0%
+4. Data import and projections-> 30%
+
+
+# 2 Point and polygon data -- SP Package class
+*countries_sp*  is a SpatialPolygons object and that it contains polygons for the countries of the world?
+
+```{r}
+library(sp)
+# Print countries_sp  
+print(countries_sp)  # TOO LONG 
+
+# Call summary() on countries_sp
+summary(countries_sp)  
+
+# Call plot() on countries_sp
+plot(countries_sp)
+```
+
+## how is that information stored in the SpatialPolygons object? 
+
+*str()* is the function to look at R objects, but what you might not know is that it takes an optional argument *max.level* that restricts how far down the hierarchy of the object str() prints. 
+```{r}
+# Call str() on countries_sp with max.level = 2
+str(countries_sp, max.level = 2) 
+```
+
+# TYPES OF OBJECTS YOU CAN FIND
+## sp classes are *S4 objects*, so instead of having elements they have *slots* and you access them with *@*
+
+1. SPATIAL POLYGONS obj
+2. SPATIAL POLYGONS DATA FRAME (polygons with a DF attached)
+
+## there are two ways to access slots in an S4 object:
+
+x@slot_name # or...
+slot(x, "slot_name")
+
+### ESE
+1. Create a new variable called one that contains the 169th element of the list in the polygons slot of countries_sp. Use double bracket subsetting (i.e. [[...]] to extract this element.
+2. Print one.
+3. Call summary() on one. What slots does this object have?
+4. Call str() on one with max.level = 2.
+```{r}
+# 169th element (polygon) of countries_spdf@polygons: one
+one <- countries_spdf@polygons[[169]]
+
+# Print one
+one
+
+# Call summary() on one
+summary(one)
+
+# Call str() on one with max.level = 2
+str(one, max.level = 2)
+```
+
+### ESE - further down
+```{r}
+# Continue to USE the 169th element (polygon) of countries_spdf@polygons: one
+one <- countries_spdf@polygons[[169]]
+
+# str() with max.level = 2, on the Polygons slot of one
+str(one@Polygons, max.level = 2)
+
+# str() with max.level = 2, on the 6th element of the one@Polygons
+str(one@Polygons[[6]], max.level = 2)
+
+# Call plot on the coords slot of 6th element of one@Polygons
+plot(one@Polygons[[6]]@coords)
+```
+****Since **one@Polygons[[6]]@coords** is just a matrix, this plot() call uses the default plot method, not the special one for spatial objects.
+
+
+# SUBSETTING SPDF
+The subsetting of Spatial___DataFrame objects is built to work like subsetting a data frame. You think about subsetting the data frame, but in practice what is returned is a new Spatial___DataFrame with only the rows of data you want and the corresponding spatial objects.
+
+##  __SUBSETTING BY INDEX__  
+For example, if x is a data frame you know x[1, ] returns the first row. If x is a Spatial___DataFrame, you get a new Spatial___DataFrame that contains the first row of data and the spatial data that correspond to that row.
+```{r}
+# Subset the 169th object of countries_spdf: usa
+usa <- countries_spdf[169, ]
+
+# Look at summary() of usa
+summary(usa)
+
+# Look at str() of usa
+str(usa, max.level = 2)
+
+# Call plot() on usa
+plot(usa)
+```
+
+##  __SUBSETTING BY DATA ATTRIBUTES__  
+It's quite unusual to know exactly the indices of elements you want to keep, and far more likely you want to subset based on data attributes. You've seen the data associated with a Spatial_DataFrame lives in the data slot, but you don't normally access this slot directly.
+
+Instead,$ and [[ subsetting on a Spatial_DataFrame pulls columns directly from the data frame. 
+That is, if x is a Spatial_DataFrame object, then either x$col_name or x[["col_name"]] pulls out the col_name column from the data frame.
+
+Think of this like a shortcut; instead of having to pull the right column from the object in the data slot (i.e. x@data$col_name), you can just use x$col_name.
+
+### ESE - plot New Zealand
+Subsetting based on data attributes is a combination of creating a logical from the columns of your data frame and subsetting the Spatial___DataFrame object. This is similar to how you subset an ordinary data frame.
+
+Create a logical from a column, let's say countries in Asia:
+
+in_asia <- countries_spdf$region == "Asia"
+in_asia
+Then, use the logical to select rows of the Spatial___DataFrame object:
+
+countries_spdf[in_asia, ]
+Can you subset out New Zealand and plot it?
+```{r}
+# Create logical vector: is_nz
+is_nz <- countries_spdf$name == "New Zealand"
+
+# Subset countries_spdf using is_nz: nz
+nz <- countries_spdf[is_nz,]
+
+# Plot nz
+plot (nz)
+```
+
+
+
+
+

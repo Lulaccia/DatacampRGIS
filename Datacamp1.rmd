@@ -1,0 +1,12 @@
+---
+title: "DC_1-Notebook"
+output: html_notebook
+---
+
+# INDEX
+1. Basic mapping with ggplot2 -> 17%
+2. Point and polygon data     -> 75%
+3. Raster data and color      -> 0%
+4. Data import and projections-> 30%
+
+## 1. Basic mapping with ggplot2 
