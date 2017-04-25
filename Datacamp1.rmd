@@ -6,7 +6,7 @@ output:
 ---
 
 # INDEX
-1. **Basic mapping with ggplot2** -> 17%
+1. **Basic mapping with ggplot2** -> 100%
 2. Point and polygon data     -> 75%
 3. Raster data and color      -> 0%
 4. Data import and projections-> 30%
@@ -14,8 +14,8 @@ output:
 ## 1. Basic mapping with ggplot2 and ggmap 
 There are two steps to adding a map to a ggplot2 plot with ggmap:
 
-1. Download a map using get_map()
-2. Display the map using ggmap()
+1. Download a map using *get_map()*
+2. Display/PLOT the map using *ggmap()*
 As an example, let's grab a map for New York City:
 
 ### basic **ggmap::get_map** function -> ARGUMENTS
@@ -33,10 +33,9 @@ corvallis <- c(lon = -123.2620, lat = 44.5646)
 # Get map at zoom level 5: map_5
 map_5 <- get_map(location = corvallis, zoom = 5, scale = 1)
 
-
 # Plot map at zoom level 5
 ggmap(map_5)
-print (map_5)
+# print (map_5)
 
 # Get map at zoom level 13: corvallis_map
 corvallis_map <- get_map(location = corvallis, zoom = 13, scale = 1)
@@ -44,7 +43,7 @@ corvallis_map <- get_map(location = corvallis, zoom = 13, scale = 1)
 
 # Plot map at zoom level 13
 ggmap(corvallis_map)
-print(corvallis_map)
+# print(corvallis_map)
 
 # check possible baselayers
 ?get_map
@@ -76,15 +75,15 @@ ggmap(corvallis_map_bw)
 
 
 ### Adding points to the map
-Similar to ggplot(), you can add layers of data to a ggmap() call (e.g. + geom_point()). It's important to note, however, that ggmap() sets the map as the default dataset and also sets the default aesthetic mappings.
+Similar to ggplot(), you can add layers of data to a **ggmap()** call (e.g. + geom_point()). It's important to note, however, that ggmap() sets the map as the default dataset and also sets the default aesthetic mappings.
 
-This means that if you want to add a layer from something other than the map (e.g. sales), you need to explicitly specify both the mapping and data arguments to the geom.
+_This means that if you want to add a layer from something other than the map (e.g. sales), you need to explicitly specify both the mapping and data arguments to the geom_
 
 * method 1:
 ggplot(sales, aes(lon, lat)) + 
   geom_point()
   
-  * method 2: 
+* method 2: 
 ggplot() + 
   geom_point(aes(lon, lat), data = sales)
   
@@ -123,7 +122,7 @@ ggmap(corvallis_map) +
 ```
 
 
-### using the ggmap ->  base_layer argument. 
+### using the ggmap ->  base_layer argument + SPLITTING CLASSES OF ONE CATEGORICAL DATA
 If we add layers  to a ggmap() plot by adding geom_***(),this has two big downsides: 
 1. further layers also need to specify the data and mappings, 
 2. facetting won't work at all.
@@ -138,16 +137,130 @@ could have **instead** been:
       ggmap(corvallis_map, base_layer = ggplot(sales, aes(lon, lat))) + geom_point()
 
 By moving aes(x, y) and data from the initial geom_point() function to the ggplot() call within the ggmap() call, you can add facets, or extra layers, the usual ggplot2 way.
+
+Rewrite the second plot to use the base_layer argument of ggmap() and add a **facet_wrap()** to facet by class. Likewise, leave the color argument inside the aes() function within your geom_point() call.
 ```{r eval=FALSE}
 # always missing the data
 
 # Use base_layer argument to ggmap() to specify data and x, y mappings
 ggmap(corvallis_map_bw, base_layer = ggplot(sales, aes(lon, lat))) +
-  geom_point(aes(color = year_built))
+  geom_point(aes(color = year_built)) # Remember to leave the color argument inside the aes() function within your geom_point() call.
+
+
 
 # Use base_layer argument to ggmap() and add facet_wrap()
 ggmap(corvallis_map_bw, base_layer = ggplot(sales, aes(lon, lat))) +
   geom_point(aes(color = class)) +
   facet_wrap(~ class)
 ```
+
+### A quick alternative to ggmap() --> qmplot() 
+
+qmplot() is less flexible than a full specification, but often involves significantly less typing andg gives the same: faceted plot from the previous exercise:
+
+```{r eval=FALSE}
+# Plot house sales using qmplot()
+qmplot(lon, lat, data = sales, 
+       geom = "point", color = bedrooms) +
+  facet_wrap(~ month)
+```
+
+# DRAWING POLYGONS
+in the ward_sales data frame, you have information on the house sales summarised to the ward level. Your goal is to create a map where each ward is colored by one of your summaries: the number of sales or the average sales price.
+
+## DATA
+1. lon and lat variables = describe its location and ward describes which ward it belongs to, 
+2. group = is an identifier for a single polygon 
+3. order = escribes the order in which the points should be drawn to create the correct shapes.
+
+## 1) DRAW polygons
+```{r eval=FALSE}
+# Add a point layer with color mapped to ward
+ggplot(ward_sales, aes(lon, lat)) +
+  geom_point(aes(color = ward))
+
+# Add a point layer with color mapped to group
+ggplot(ward_sales, aes(lon, lat)) +
+  geom_point(aes(color = group))
+
+# Add a path layer with group mapped to group
+ggplot(ward_sales, aes(lon, lat)) +
+  geom_path(aes(group = group))
+
+# Add a polygon layer with fill mapped to ward, and group to group
+ggplot(ward_sales, aes(lon, lat)) +
+  geom_polygon(aes(group = group, fill = ward))
+```
+
+
+## 2) Choropleth map
+A choropleth map describes a map where polygons are colored according to some variable. In the ward_sales data frame, you have information on the house sales summarised to the ward level. Your goal is to create a map where each ward is colored by one of your summaries:
+
+In the data frame, **each row describes one point on the boundary of a ward**. The lon and lat variables describe its location and ward describes which ward it belongs to, but what are group and order?
+
+Remember the two tricky things about polygons? An area may be described by more than one polygon and order matters. group is an identifier for a single polygon, but a ward may be composed of more than one polygon, so you would see more than one value of group for such a ward. order describes the order in which the points should be drawn to create the correct shapes.
+
+```{r}
+# Add a point layer with color mapped to ward
+ggplot(ward_sales, aes(lon, lat)) +
+  geom_point(aes(color = ward))
+
+# Add a point layer with color mapped to group
+ggplot(ward_sales, aes(lon, lat)) +
+  geom_point(aes(color = group))
+
+# Add a path layer with group mapped to group
+ggplot(ward_sales, aes(lon, lat)) +
+  geom_path(aes(group = group))
+
+# Add a polygon layer with fill mapped to ward, and group to group
+ggplot(ward_sales, aes(lon, lat)) +
+  geom_polygon(aes(group = group, fill = ward))
+```
+
+
+## 3) NOW let's get your polygons on a map. 
+Now that you understand drawing polygons, let's get your polygons on a map. Remember, you replace your ggplot() call with a ggmap() call and the original ggplot() call moves to the base_layer() argument, then you add your polygon layer as usual:
+
+    ggmap(corvallis_map_bw,
+      base_layer = ggplot(ward_sales,
+                          aes(lon, lat))) +
+  geom_polygon(aes(group = group, fill = ward))
+  
+### PROBLEM
+* here Part of the ward boundaries are beyond the map boundary. Due to the default settings in ggmap(), any data off the map is dropped before plotting, so some polygon boundaries are dropped and when the remaining points are joined up you get the wrong shapes.
+
+### SOLUTION
+Don't worry, there is a solution: ggmap() provides some arguments to control this behaviour. Arguments **extent = "normal"** along with **maprange = FALSE** force the plot to use the data range rather than the map range to define the plotting boundaries.
+
+```{r eval=FALSE}
+# Add the extent = "normal" and maprange = FALSE arguments to the ggmap() call to fix the polygon cropping.
+# Fix the polygon cropping
+ggmap(corvallis_map_bw, 
+      base_layer = ggplot(ward_sales, aes(lon, lat)),
+      extent = "normal", maprange = FALSE) +
+  geom_polygon(aes(group = group, fill = ward))
+
+# Now repeat the plot, but map fill to num_sales. How would you describe the pattern in the number of sales by ward?
+# Repeat, but map fill to num_sales
+ggmap(corvallis_map_bw, 
+      base_layer = ggplot(ward_sales, aes(lon, lat)),
+      extent = "normal", maprange = FALSE) +
+  geom_polygon(aes(group = group, fill = num_sales))
+
+# Repeat the plot again, but map fill to avg_price. Also, set alpha = 0.8 in your call to geom_polygon() to allow the map to show through.
+# Repeat again, but map fill to avg_price
+ggmap(corvallis_map_bw, 
+      base_layer = ggplot(ward_sales, aes(lon, lat)),
+      extent = "normal", maprange = FALSE) +
+  geom_polygon(aes(group = group, fill = avg_price), alpha = 0.8)
+
+```
+
+An alternative to solve the cropping problem is to use qmplot(lon, lat, data = ward_sales, geom = "polygon", group = group, fill = avg_price), which will download enough map to cover the whole range of the data.
+
+
+
+
+
 
